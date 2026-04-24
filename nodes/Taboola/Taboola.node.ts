@@ -1,10 +1,10 @@
 import type {
 	IExecuteFunctions,
+	IHttpRequestMethods,
+	IHttpRequestOptions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	IHttpRequestMethods,
-	IHttpRequestOptions,
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
@@ -53,7 +53,7 @@ export class Taboola implements INodeType {
 				noDataExpression: true,
 				displayOptions: { show: { resource: ['account'] } },
 				options: [
-					{ name: 'Get All', value: 'getAll', description: 'Get all allowed accounts', action: 'Get all accounts' },
+					{ name: 'Get Many', value: 'getAll', description: 'Get many allowed accounts', action: 'Get many accounts' },
 				],
 				default: 'getAll',
 			},
@@ -67,10 +67,10 @@ export class Taboola implements INodeType {
 				displayOptions: { show: { resource: ['campaign'] } },
 				options: [
 					{ name: 'Create', value: 'create', description: 'Create a campaign', action: 'Create a campaign' },
-					{ name: 'Get', value: 'get', description: 'Get a campaign', action: 'Get a campaign' },
-					{ name: 'Get All', value: 'getAll', description: 'Get all campaigns', action: 'Get all campaigns' },
-					{ name: 'Update', value: 'update', description: 'Update a campaign', action: 'Update a campaign' },
 					{ name: 'Delete', value: 'delete', description: 'Delete a campaign', action: 'Delete a campaign' },
+					{ name: 'Get', value: 'get', description: 'Get a campaign', action: 'Get a campaign' },
+					{ name: 'Get Many', value: 'getAll', description: 'Get many campaigns', action: 'Get many campaigns' },
+					{ name: 'Update', value: 'update', description: 'Update a campaign', action: 'Update a campaign' },
 				],
 				default: 'getAll',
 			},
@@ -84,9 +84,9 @@ export class Taboola implements INodeType {
 				displayOptions: { show: { resource: ['campaignItem'] } },
 				options: [
 					{ name: 'Create', value: 'create', description: 'Create a campaign item', action: 'Create a campaign item' },
-					{ name: 'Get All', value: 'getAll', description: 'Get all campaign items', action: 'Get all campaign items' },
-					{ name: 'Update', value: 'update', description: 'Update a campaign item', action: 'Update a campaign item' },
 					{ name: 'Delete', value: 'delete', description: 'Delete a campaign item', action: 'Delete a campaign item' },
+					{ name: 'Get Many', value: 'getAll', description: 'Get many campaign items', action: 'Get many campaign items' },
+					{ name: 'Update', value: 'update', description: 'Update a campaign item', action: 'Update a campaign item' },
 				],
 				default: 'getAll',
 			},
@@ -183,9 +183,9 @@ export class Taboola implements INodeType {
 				name: 'spendingLimitModel',
 				type: 'options',
 				options: [
+					{ name: 'Daily', value: 'DAILY' },
 					{ name: 'Entire', value: 'ENTIRE' },
 					{ name: 'Monthly', value: 'MONTHLY' },
-					{ name: 'Daily', value: 'DAILY' },
 				],
 				default: 'ENTIRE',
 				description: 'The spending limit model for the campaign',
@@ -204,25 +204,18 @@ export class Taboola implements INodeType {
 				},
 				options: [
 					{
-						displayName: 'Start Date',
-						name: 'start_date',
-						type: 'string',
-						default: '',
-						description: 'Campaign start date (YYYY-MM-DD)',
-					},
-					{
-						displayName: 'End Date',
-						name: 'end_date',
-						type: 'string',
-						default: '',
-						description: 'Campaign end date (YYYY-MM-DD)',
-					},
-					{
 						displayName: 'Active',
 						name: 'is_active',
 						type: 'boolean',
 						default: true,
 						description: 'Whether the campaign is active',
+					},
+					{
+						displayName: 'Country Targeting (Codes)',
+						name: 'country_targeting',
+						type: 'string',
+						default: '',
+						description: 'Comma-separated list of country codes to target (e.g. US,UK,DE)',
 					},
 					{
 						displayName: 'Daily Ad Delivery Model',
@@ -237,24 +230,24 @@ export class Taboola implements INodeType {
 						description: 'How the daily budget is spent',
 					},
 					{
+						displayName: 'End Date',
+						name: 'end_date',
+						type: 'string',
+						default: '',
+						description: 'Campaign end date (YYYY-MM-DD)',
+					},
+					{
 						displayName: 'Marketing Objective',
 						name: 'marketing_objective',
 						type: 'options',
 						options: [
 							{ name: 'Brand Awareness', value: 'BRAND_AWARENESS' },
 							{ name: 'Drive Website Traffic', value: 'DRIVE_WEBSITE_TRAFFIC' },
-							{ name: 'Online Purchases', value: 'ONLINE_PURCHASES' },
 							{ name: 'Lead Generation', value: 'LEAD_GENERATION' },
+							{ name: 'Online Purchases', value: 'ONLINE_PURCHASES' },
 						],
 						default: 'DRIVE_WEBSITE_TRAFFIC',
 						description: 'The marketing objective for the campaign',
-					},
-					{
-						displayName: 'Country Targeting (Codes)',
-						name: 'country_targeting',
-						type: 'string',
-						default: '',
-						description: 'Comma-separated list of country codes to target (e.g. US,UK,DE)',
 					},
 					{
 						displayName: 'Platform Targeting',
@@ -268,6 +261,13 @@ export class Taboola implements INodeType {
 						default: [],
 						description: 'Which platforms to target',
 					},
+					{
+						displayName: 'Start Date',
+						name: 'start_date',
+						type: 'string',
+						default: '',
+						description: 'Campaign start date (YYYY-MM-DD)',
+					},
 				],
 			},
 			{
@@ -280,6 +280,13 @@ export class Taboola implements INodeType {
 					show: { resource: ['campaign'], operation: ['update'] },
 				},
 				options: [
+					{
+						displayName: 'Active',
+						name: 'is_active',
+						type: 'boolean',
+						default: true,
+						description: 'Whether the campaign is active',
+					},
 					{
 						displayName: 'Campaign Name',
 						name: 'name',
@@ -296,35 +303,6 @@ export class Taboola implements INodeType {
 						description: 'Updated cost per click',
 					},
 					{
-						displayName: 'Spending Limit',
-						name: 'spending_limit',
-						type: 'number',
-						typeOptions: { numberPrecision: 2 },
-						default: 0,
-						description: 'Updated spending limit',
-					},
-					{
-						displayName: 'Active',
-						name: 'is_active',
-						type: 'boolean',
-						default: true,
-						description: 'Whether the campaign is active',
-					},
-					{
-						displayName: 'Start Date',
-						name: 'start_date',
-						type: 'string',
-						default: '',
-						description: 'Campaign start date (YYYY-MM-DD)',
-					},
-					{
-						displayName: 'End Date',
-						name: 'end_date',
-						type: 'string',
-						default: '',
-						description: 'Campaign end date (YYYY-MM-DD)',
-					},
-					{
 						displayName: 'Daily Ad Delivery Model',
 						name: 'daily_ad_delivery_model',
 						type: 'options',
@@ -335,6 +313,28 @@ export class Taboola implements INodeType {
 						],
 						default: 'BALANCED',
 						description: 'How the daily budget is spent',
+					},
+					{
+						displayName: 'End Date',
+						name: 'end_date',
+						type: 'string',
+						default: '',
+						description: 'Campaign end date (YYYY-MM-DD)',
+					},
+					{
+						displayName: 'Spending Limit',
+						name: 'spending_limit',
+						type: 'number',
+						typeOptions: { numberPrecision: 2 },
+						default: 0,
+						description: 'Updated spending limit',
+					},
+					{
+						displayName: 'Start Date',
+						name: 'start_date',
+						type: 'string',
+						default: '',
+						description: 'Campaign start date (YYYY-MM-DD)',
 					},
 				],
 			},
@@ -407,6 +407,20 @@ export class Taboola implements INodeType {
 				},
 				options: [
 					{
+						displayName: 'Active',
+						name: 'is_active',
+						type: 'boolean',
+						default: true,
+						description: 'Whether the item is active',
+					},
+					{
+						displayName: 'Thumbnail URL',
+						name: 'thumbnail_url',
+						type: 'string',
+						default: '',
+						description: 'Updated thumbnail image URL',
+					},
+					{
 						displayName: 'Title',
 						name: 'title',
 						type: 'string',
@@ -420,20 +434,6 @@ export class Taboola implements INodeType {
 						default: '',
 						description: 'Updated landing page URL',
 					},
-					{
-						displayName: 'Thumbnail URL',
-						name: 'thumbnail_url',
-						type: 'string',
-						default: '',
-						description: 'Updated thumbnail image URL',
-					},
-					{
-						displayName: 'Active',
-						name: 'is_active',
-						type: 'boolean',
-						default: true,
-						description: 'Whether the item is active',
-					},
 				],
 			},
 
@@ -444,8 +444,8 @@ export class Taboola implements INodeType {
 				type: 'options',
 				options: [
 					{ name: 'Day', value: 'day' },
-					{ name: 'Week', value: 'week' },
 					{ name: 'Month', value: 'month' },
+					{ name: 'Week', value: 'week' },
 				],
 				default: 'day',
 				description: 'The time dimension for the report',
@@ -492,21 +492,6 @@ export class Taboola implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 
-		const credentials = await this.getCredentials('taboolaApi');
-
-		// Get access token via OAuth2 client credentials
-		const tokenResponse = await this.helpers.httpRequest({
-			method: 'POST',
-			url: 'https://backstage.taboola.com/backstage/oauth/token',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: new URLSearchParams({
-				client_id: credentials.clientId as string,
-				client_secret: credentials.clientSecret as string,
-				grant_type: 'client_credentials',
-			}).toString(),
-		});
-
-		const accessToken = tokenResponse.access_token as string;
 		const baseUrl = 'https://backstage.taboola.com/backstage/api/1.0';
 
 		for (let i = 0; i < items.length; i++) {
@@ -650,7 +635,6 @@ export class Taboola implements INodeType {
 					method,
 					url,
 					headers: {
-						Authorization: `Bearer ${accessToken}`,
 						'Content-Type': 'application/json',
 					},
 				};
@@ -659,23 +643,23 @@ export class Taboola implements INodeType {
 					options.body = body;
 				}
 
-				const response = await this.helpers.httpRequest(options);
+				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'taboolaApi', options);
 
 				// Handle array results (e.g. from getAll endpoints)
 				if (response.results && Array.isArray(response.results)) {
-					for (const item of response.results) {
-						returnData.push({ json: item });
+					for (const result of response.results) {
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else if (Array.isArray(response)) {
-					for (const item of response) {
-						returnData.push({ json: item });
+					for (const result of response) {
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else {
-					returnData.push({ json: response });
+					returnData.push({ json: response, pairedItem: { item: i } });
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: (error as Error).message }, pairedItem: i });
+					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
 				} else {
 					throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
 				}
