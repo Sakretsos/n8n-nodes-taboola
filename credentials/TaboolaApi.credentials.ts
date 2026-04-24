@@ -44,11 +44,7 @@ export class TaboolaApi implements ICredentialType {
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-			body: new URLSearchParams({
-				client_id: credentials.clientId as string,
-				client_secret: credentials.clientSecret as string,
-				grant_type: 'client_credentials',
-			}).toString(),
+			body: `client_id=${encodeURIComponent(credentials.clientId as string)}&client_secret=${encodeURIComponent(credentials.clientSecret as string)}&grant_type=client_credentials`,
 		});
 		return { accessToken: response.access_token };
 	}
