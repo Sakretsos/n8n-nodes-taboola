@@ -38,13 +38,15 @@ export class TaboolaApi implements ICredentialType {
 	];
 
 	async preAuthentication(this: IHttpRequestHelper, credentials: ICredentialDataDecryptedObject) {
+		const clientId = credentials.clientId as string;
+		const clientSecret = credentials.clientSecret as string;
 		const response = await this.helpers.httpRequest({
 			method: 'POST',
 			url: 'https://backstage.taboola.com/backstage/oauth/token',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-			body: `client_id=${encodeURIComponent(credentials.clientId as string)}&client_secret=${encodeURIComponent(credentials.clientSecret as string)}&grant_type=client_credentials`,
+			body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
 		});
 		return { accessToken: response.access_token };
 	}
