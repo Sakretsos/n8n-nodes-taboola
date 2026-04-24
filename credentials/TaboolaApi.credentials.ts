@@ -35,18 +35,27 @@ export class TaboolaApi implements ICredentialType {
 			required: true,
 			description: 'The Client Secret provided by your Taboola account manager',
 		},
+		{
+			displayName: 'Account ID',
+			name: 'accountId',
+			type: 'string',
+			default: '',
+			required: true,
+			description: 'Your Taboola advertiser account ID',
+		},
 	];
 
 	async preAuthentication(this: IHttpRequestHelper, credentials: ICredentialDataDecryptedObject) {
 		const clientId = credentials.clientId as string;
 		const clientSecret = credentials.clientSecret as string;
+		const accountId = credentials.accountId as string;
 		const response = await this.helpers.httpRequest({
 			method: 'POST',
 			url: 'https://backstage.taboola.com/backstage/oauth/token',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-			body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
+			body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials&account_id=${encodeURIComponent(accountId)}`,
 		});
 		return { accessToken: response.access_token };
 	}
