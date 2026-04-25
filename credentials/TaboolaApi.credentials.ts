@@ -1,10 +1,8 @@
 import type {
 	IAuthenticateGeneric,
 	Icon,
-	ICredentialDataDecryptedObject,
 	ICredentialTestRequest,
 	ICredentialType,
-	IHttpRequestHelper,
 	INodeProperties,
 } from 'n8n-workflow';
 
@@ -45,35 +43,26 @@ export class TaboolaApi implements ICredentialType {
 		},
 	];
 
-	async preAuthentication(this: IHttpRequestHelper, credentials: ICredentialDataDecryptedObject) {
-		const clientId = credentials.clientId as string;
-		const clientSecret = credentials.clientSecret as string;
-		const accountId = credentials.accountId as string;
-		const response = await this.helpers.httpRequest({
+	// Used only by the credential test below — the node fetches its own token directly.
+	authenticate: IAuthenticateGeneric = {
+		type: 'generic',
+		properties: {
+			body: {
+				client_id: '={{$credentials.clientId}}',
+				client_secret: '={{$credentials.clientSecret}}',
+				grant_type: 'client_credentials',
+			},
+		},
+	};
+
+	// Verifies credentials by obtaining an access token from Taboola.
+	test: ICredentialTestRequest = {
+		request: {
 			method: 'POST',
 			url: 'https://backstage.taboola.com/backstage/oauth/token',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-			body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials&account_id=${encodeURIComponent(accountId)}`,
-		});
-		return { accessToken: response.access_token };
-	}
-
-	authenticate: IAuthenticateGeneric = {
-		type: 'generic',
-		properties: {
-			headers: {
-				Authorization: '=Bearer {{$credentials?.accessToken}}',
-			},
-		},
-	};
-
-	test: ICredentialTestRequest = {
-		request: {
-			baseURL: 'https://backstage.taboola.com/backstage/api/1.0',
-			url: '/users/current/allowed-accounts/',
-			method: 'GET',
 		},
 	};
 }

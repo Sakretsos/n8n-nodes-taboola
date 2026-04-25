@@ -12,7 +12,7 @@ export class Taboola implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Taboola',
 		name: 'taboola',
-		icon: 'file:taboola.svg',
+		icon: 'file:../../icons/taboola.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
@@ -494,6 +494,18 @@ export class Taboola implements INodeType {
 
 		const baseUrl = 'https://backstage.taboola.com/backstage/api/1.0';
 
+		// n8n's preAuthentication mechanism does not reliably inject tokens into
+		// $credentials in all self-hosted versions, so we fetch the token directly.
+		const credentials = await this.getCredentials('taboolaApi');
+		// eslint-disable-next-line @n8n/community-nodes/no-http-request-with-manual-auth
+		const tokenResponse = await this.helpers.httpRequest({
+			method: 'POST',
+			url: 'https://backstage.taboola.com/backstage/oauth/token',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: `client_id=${encodeURIComponent(credentials.clientId as string)}&client_secret=${encodeURIComponent(credentials.clientSecret as string)}&grant_type=client_credentials`,
+		});
+		const accessToken = tokenResponse.access_token as string;
+
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
@@ -636,6 +648,7 @@ export class Taboola implements INodeType {
 					url,
 					headers: {
 						'Content-Type': 'application/json',
+						Authorization: `Bearer ${accessToken}`,
 					},
 				};
 
@@ -643,7 +656,8 @@ export class Taboola implements INodeType {
 					options.body = body;
 				}
 
-				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'taboolaApi', options);
+				// eslint-disable-next-line @n8n/community-nodes/no-http-request-with-manual-auth
+				const response = await this.helpers.httpRequest(options);
 
 				// Handle array results (e.g. from getAll endpoints)
 				if (response.results && Array.isArray(response.results)) {
