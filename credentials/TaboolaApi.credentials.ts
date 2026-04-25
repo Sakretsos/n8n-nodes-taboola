@@ -33,14 +33,6 @@ export class TaboolaApi implements ICredentialType {
 			required: true,
 			description: 'The Client Secret provided by your Taboola account manager',
 		},
-		{
-			displayName: 'Account ID',
-			name: 'accountId',
-			type: 'string',
-			default: '',
-			required: true,
-			description: 'Your Taboola advertiser account ID',
-		},
 	];
 
 	// Used only by the credential test below — the node fetches its own token directly.
