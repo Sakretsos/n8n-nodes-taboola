@@ -173,6 +173,7 @@ export class Taboola implements INodeType {
 				type: 'number',
 				typeOptions: { numberPrecision: 2 },
 				default: 0,
+				required: true,
 				description: 'Total spending limit for the campaign',
 				displayOptions: {
 					show: { resource: ['campaign'], operation: ['create'] },
@@ -194,13 +195,47 @@ export class Taboola implements INodeType {
 				},
 			},
 			{
+				displayName: 'Bid Strategy',
+				name: 'bidStrategy',
+				type: 'options',
+				options: [
+					{ name: 'Fixed CPC', value: 'FIXED' },
+					{ name: 'Maximize Conversions', value: 'MAX_CONVERSIONS' },
+					{ name: 'Smart', value: 'SMART' },
+					{ name: 'Target CPA', value: 'TARGET_CPA' },
+				],
+				default: 'FIXED',
+				required: true,
+				description: 'The bid strategy for the campaign',
+				displayOptions: {
+					show: { resource: ['campaign'], operation: ['create'] },
+				},
+			},
+			{
+				displayName: 'Marketing Objective',
+				name: 'marketingObjective',
+				type: 'options',
+				options: [
+					{ name: 'Brand Awareness', value: 'BRAND_AWARENESS' },
+					{ name: 'Drive Website Traffic', value: 'DRIVE_WEBSITE_TRAFFIC' },
+					{ name: 'Lead Generation', value: 'LEAD_GENERATION' },
+					{ name: 'Online Purchases', value: 'ONLINE_PURCHASES' },
+				],
+				default: 'DRIVE_WEBSITE_TRAFFIC',
+				required: true,
+				description: 'The marketing objective for the campaign',
+				displayOptions: {
+					show: { resource: ['campaign'], operation: ['create'] },
+				},
+			},
+			{
 				displayName: 'Additional Fields',
 				name: 'additionalFields',
 				type: 'collection',
 				placeholder: 'Add Field',
 				default: {},
 				displayOptions: {
-					show: { resource: ['campaign'], operation: ['create', 'update'] },
+					show: { resource: ['campaign'], operation: ['create'] },
 				},
 				options: [
 					{
@@ -211,23 +246,49 @@ export class Taboola implements INodeType {
 						description: 'Whether the campaign is active',
 					},
 					{
+						displayName: 'App Restriction Targeting',
+						name: 'app_restriction_targeting',
+						type: 'options',
+						options: [
+							{ name: 'All', value: 'ALL' },
+							{ name: 'App', value: 'APP' },
+							{ name: 'Web', value: 'WEB' },
+						],
+						default: 'ALL',
+						description: 'Inventory type targeting for the campaign',
+					},
+					{
+						displayName: 'Campaign Group ID',
+						name: 'campaign_group_id',
+						type: 'number',
+						default: 0,
+						description: 'The ID of the campaign group to assign this campaign to. If omitted, Taboola auto-creates a new group. You can find group IDs in the Taboola Realize UI or from existing campaign responses.',
+					},
+					{
 						displayName: 'Country Targeting (Codes)',
 						name: 'country_targeting',
 						type: 'string',
 						default: '',
-						description: 'Comma-separated list of country codes to target (e.g. US,UK,DE)',
+						description: 'Type ALL to target all countries, or comma-separated country codes (e.g. GR,US,DE) to target specific ones',
 					},
 					{
 						displayName: 'Daily Ad Delivery Model',
 						name: 'daily_ad_delivery_model',
 						type: 'options',
 						options: [
-							{ name: 'Accelerated', value: 'ACCELERATED' },
 							{ name: 'Balanced', value: 'BALANCED' },
 							{ name: 'Strict', value: 'STRICT' },
 						],
 						default: 'BALANCED',
-						description: 'How the daily budget is spent',
+						description: 'How the daily budget is spent. Strict requires a daily_cap value greater than 0.',
+					},
+					{
+						displayName: 'Daily Cap',
+						name: 'daily_cap',
+						type: 'number',
+						typeOptions: { numberPrecision: 2 },
+						default: 0,
+						description: 'Daily spending cap. Required when Daily Ad Delivery Model is set to Strict. Set to 0 or leave empty for Balanced mode.',
 					},
 					{
 						displayName: 'End Date',
@@ -235,19 +296,6 @@ export class Taboola implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Campaign end date (YYYY-MM-DD)',
-					},
-					{
-						displayName: 'Marketing Objective',
-						name: 'marketing_objective',
-						type: 'options',
-						options: [
-							{ name: 'Brand Awareness', value: 'BRAND_AWARENESS' },
-							{ name: 'Drive Website Traffic', value: 'DRIVE_WEBSITE_TRAFFIC' },
-							{ name: 'Lead Generation', value: 'LEAD_GENERATION' },
-							{ name: 'Online Purchases', value: 'ONLINE_PURCHASES' },
-						],
-						default: 'DRIVE_WEBSITE_TRAFFIC',
-						description: 'The marketing objective for the campaign',
 					},
 					{
 						displayName: 'Platform Targeting',
@@ -267,6 +315,13 @@ export class Taboola implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Campaign start date (YYYY-MM-DD)',
+					},
+					{
+						displayName: 'Tracking Code',
+						name: 'tracking_code',
+						type: 'string',
+						default: '',
+						description: 'URL parameters appended to campaign item URLs for tracking (e.g. utm_source=taboola&utm_medium=referral). Do not add a leading ? or &.',
 					},
 				],
 			},
@@ -288,11 +343,30 @@ export class Taboola implements INodeType {
 						description: 'Whether the campaign is active',
 					},
 					{
+						displayName: 'App Restriction Targeting',
+						name: 'app_restriction_targeting',
+						type: 'options',
+						options: [
+							{ name: 'All', value: 'ALL' },
+							{ name: 'App', value: 'APP' },
+							{ name: 'Web', value: 'WEB' },
+						],
+						default: 'ALL',
+						description: 'Inventory type targeting for the campaign',
+					},
+					{
 						displayName: 'Campaign Name',
 						name: 'name',
 						type: 'string',
 						default: '',
 						description: 'Updated campaign name',
+					},
+					{
+						displayName: 'Country Targeting (Codes)',
+						name: 'country_targeting',
+						type: 'string',
+						default: '',
+						description: 'Type ALL to target all countries, or comma-separated country codes (e.g. GR,US,DE) to target specific ones',
 					},
 					{
 						displayName: 'CPC',
@@ -307,12 +381,19 @@ export class Taboola implements INodeType {
 						name: 'daily_ad_delivery_model',
 						type: 'options',
 						options: [
-							{ name: 'Accelerated', value: 'ACCELERATED' },
 							{ name: 'Balanced', value: 'BALANCED' },
 							{ name: 'Strict', value: 'STRICT' },
 						],
 						default: 'BALANCED',
-						description: 'How the daily budget is spent',
+						description: 'How the daily budget is spent. Strict requires a daily_cap value greater than 0.',
+					},
+					{
+						displayName: 'Daily Cap',
+						name: 'daily_cap',
+						type: 'number',
+						typeOptions: { numberPrecision: 2 },
+						default: 0,
+						description: 'Daily spending cap. Required when Daily Ad Delivery Model is set to Strict. Set to 0 or leave empty for Balanced mode.',
 					},
 					{
 						displayName: 'End Date',
@@ -320,6 +401,18 @@ export class Taboola implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Campaign end date (YYYY-MM-DD)',
+					},
+					{
+						displayName: 'Platform Targeting',
+						name: 'platform_targeting',
+						type: 'multiOptions',
+						options: [
+							{ name: 'Desktop', value: 'DESK' },
+							{ name: 'Mobile', value: 'PHON' },
+							{ name: 'Tablet', value: 'TBLT' },
+						],
+						default: [],
+						description: 'Which platforms to target',
 					},
 					{
 						displayName: 'Spending Limit',
@@ -335,6 +428,13 @@ export class Taboola implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Campaign start date (YYYY-MM-DD)',
+					},
+					{
+						displayName: 'Tracking Code',
+						name: 'tracking_code',
+						type: 'string',
+						default: '',
+						description: 'URL parameters appended to campaign item URLs for tracking (e.g. utm_source=taboola&utm_medium=referral). Do not add a leading ? or &.',
 					},
 				],
 			},
@@ -397,6 +497,41 @@ export class Taboola implements INodeType {
 				},
 			},
 			{
+				displayName: 'Description',
+				name: 'itemDescription',
+				type: 'string',
+				default: '',
+				description: 'Description text for the campaign item',
+				displayOptions: {
+					show: { resource: ['campaignItem'], operation: ['create'] },
+				},
+			},
+			{
+				displayName: 'CTA (Call to Action)',
+				name: 'itemCta',
+				type: 'options',
+				options: [
+					{ name: 'Click Here', value: 'CLICK_HERE' },
+					{ name: 'Download', value: 'DOWNLOAD' },
+					{ name: 'Get Offer', value: 'GET_OFFER' },
+					{ name: 'Get Quote', value: 'GET_QUOTE' },
+					{ name: 'Install Now', value: 'INSTALL_NOW' },
+					{ name: 'Learn More', value: 'LEARN_MORE' },
+					{ name: 'None', value: 'NONE' },
+					{ name: 'Play Now', value: 'PLAY_NOW' },
+					{ name: 'Read More', value: 'READ_MORE' },
+					{ name: 'Search Now', value: 'SEARCH_NOW' },
+					{ name: 'Shop Now', value: 'SHOP_NOW' },
+					{ name: 'Sign Up', value: 'SIGN_UP' },
+					{ name: 'Try Now', value: 'TRY_NOW' },
+				],
+				default: 'NONE',
+				description: 'The call-to-action button for the item',
+				displayOptions: {
+					show: { resource: ['campaignItem'], operation: ['create'] },
+				},
+			},
+			{
 				displayName: 'Item Update Fields',
 				name: 'itemUpdateFields',
 				type: 'collection',
@@ -412,6 +547,35 @@ export class Taboola implements INodeType {
 						type: 'boolean',
 						default: true,
 						description: 'Whether the item is active',
+					},
+					{
+						displayName: 'CTA (Call to Action)',
+						name: 'cta',
+						type: 'options',
+						options: [
+							{ name: 'Click Here', value: 'CLICK_HERE' },
+							{ name: 'Download', value: 'DOWNLOAD' },
+							{ name: 'Get Offer', value: 'GET_OFFER' },
+							{ name: 'Get Quote', value: 'GET_QUOTE' },
+							{ name: 'Install Now', value: 'INSTALL_NOW' },
+							{ name: 'Learn More', value: 'LEARN_MORE' },
+							{ name: 'None', value: 'NONE' },
+							{ name: 'Play Now', value: 'PLAY_NOW' },
+							{ name: 'Read More', value: 'READ_MORE' },
+							{ name: 'Search Now', value: 'SEARCH_NOW' },
+							{ name: 'Shop Now', value: 'SHOP_NOW' },
+							{ name: 'Sign Up', value: 'SIGN_UP' },
+							{ name: 'Try Now', value: 'TRY_NOW' },
+						],
+						default: 'NONE',
+						description: 'The call-to-action button for the item',
+					},
+					{
+						displayName: 'Description',
+						name: 'description',
+						type: 'string',
+						default: '',
+						description: 'Updated description text for the item',
 					},
 					{
 						displayName: 'Thumbnail URL',
@@ -546,15 +710,41 @@ export class Taboola implements INodeType {
 							cpc: this.getNodeParameter('cpc', i) as number,
 							spending_limit: this.getNodeParameter('spendingLimit', i) as number,
 							spending_limit_model: this.getNodeParameter('spendingLimitModel', i) as string,
+							bid_strategy: this.getNodeParameter('bidStrategy', i) as string,
+							marketing_objective: this.getNodeParameter('marketingObjective', i) as string,
 							...additionalFields,
 						};
 
-						// Handle country_targeting conversion
-						if (additionalFields.country_targeting && typeof additionalFields.country_targeting === 'string') {
-							(body as Record<string, unknown>).country_targeting = {
-								type: 'INCLUDE',
-								value: (additionalFields.country_targeting as string).split(',').map((c: string) => c.trim()),
+						// Convert app_restriction_targeting to nested structure
+						if (additionalFields.app_restriction_targeting) {
+							const artValue = additionalFields.app_restriction_targeting as string;
+							(body as Record<string, unknown>).app_restriction_targeting = {
+								type: artValue === 'ALL' ? 'ALL' : 'INCLUDE',
+								value: artValue === 'ALL' ? [] : [artValue],
 							};
+						}
+
+						// Convert campaign_group_id to the nested structure Taboola expects
+						if ((body as Record<string, unknown>).campaign_group_id) {
+							(body as Record<string, unknown>).campaign_groups = {
+								linked_groups: [{ id: String((body as Record<string, unknown>).campaign_group_id) }],
+							};
+						}
+						delete (body as Record<string, unknown>).campaign_group_id;
+
+						// Handle country_targeting conversion
+						if (additionalFields.country_targeting !== undefined) {
+							const ctValue = (additionalFields.country_targeting as string).trim().toUpperCase();
+							if (ctValue === 'ALL') {
+								(body as Record<string, unknown>).country_targeting = { type: 'ALL' };
+							} else if (ctValue) {
+								(body as Record<string, unknown>).country_targeting = {
+									type: 'INCLUDE',
+									value: ctValue.split(',').map((c: string) => c.trim()),
+								};
+							} else {
+								delete (body as Record<string, unknown>).country_targeting;
+							}
 						}
 
 						// Handle platform_targeting conversion
@@ -571,8 +761,39 @@ export class Taboola implements INodeType {
 						const campaignId = this.getNodeParameter('campaignId', i) as string;
 						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/`;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as Record<string, unknown>;
-						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as Record<string, unknown>;
-						body = { ...updateFields, ...additionalFields };
+						body = { ...updateFields };
+
+						// Convert app_restriction_targeting to nested structure
+						if (updateFields.app_restriction_targeting) {
+							const artValue = updateFields.app_restriction_targeting as string;
+							(body as Record<string, unknown>).app_restriction_targeting = {
+								type: artValue === 'ALL' ? 'ALL' : 'INCLUDE',
+								value: artValue === 'ALL' ? [] : [artValue],
+							};
+						}
+
+						// Handle country_targeting conversion
+						if (updateFields.country_targeting !== undefined) {
+							const ctValue = (updateFields.country_targeting as string).trim().toUpperCase();
+							if (ctValue === 'ALL') {
+								(body as Record<string, unknown>).country_targeting = { type: 'ALL' };
+							} else if (ctValue) {
+								(body as Record<string, unknown>).country_targeting = {
+									type: 'INCLUDE',
+									value: ctValue.split(',').map((c: string) => c.trim()),
+								};
+							} else {
+								delete (body as Record<string, unknown>).country_targeting;
+							}
+						}
+
+						// Handle platform_targeting conversion
+						if (updateFields.platform_targeting && Array.isArray(updateFields.platform_targeting)) {
+							(body as Record<string, unknown>).platform_targeting = {
+								type: 'INCLUDE',
+								value: updateFields.platform_targeting,
+							};
+						}
 					}
 
 					if (operation === 'delete') {
@@ -593,15 +814,20 @@ export class Taboola implements INodeType {
 
 					if (operation === 'create') {
 						method = 'POST';
-						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/items/`;
-						body = {
+						// Use items/mass endpoint to skip crawling and pass all fields at once
+						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/items/mass`;
+						const itemData: Record<string, unknown> = {
 							url: this.getNodeParameter('itemUrl', i) as string,
-							title: this.getNodeParameter('itemTitle', i, '') as string,
-							thumbnail_url: this.getNodeParameter('thumbnailUrl', i, '') as string,
 						};
-						// Remove empty optional fields
-						if (!(body as Record<string, unknown>).title) delete (body as Record<string, unknown>).title;
-						if (!(body as Record<string, unknown>).thumbnail_url) delete (body as Record<string, unknown>).thumbnail_url;
+						const title = this.getNodeParameter('itemTitle', i, '') as string;
+						const thumbnailUrl = this.getNodeParameter('thumbnailUrl', i, '') as string;
+						const description = this.getNodeParameter('itemDescription', i, '') as string;
+						const itemCta = this.getNodeParameter('itemCta', i, 'NONE') as string;
+						if (title) itemData.title = title;
+						if (thumbnailUrl) itemData.thumbnail_url = thumbnailUrl;
+						if (description) itemData.description = description;
+						if (itemCta && itemCta !== 'NONE') itemData.cta = { cta_type: itemCta };
+						body = { collection: [itemData] };
 					}
 
 					if (operation === 'update') {
@@ -609,6 +835,10 @@ export class Taboola implements INodeType {
 						const itemId = this.getNodeParameter('itemId', i) as string;
 						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/items/${itemId}/`;
 						body = this.getNodeParameter('itemUpdateFields', i, {}) as object;
+						// Convert cta to nested object
+						if ((body as Record<string, unknown>).cta) {
+							(body as Record<string, unknown>).cta = { cta_type: (body as Record<string, unknown>).cta };
+						}
 					}
 
 					if (operation === 'delete') {
@@ -672,10 +902,20 @@ export class Taboola implements INodeType {
 					returnData.push({ json: response, pairedItem: { item: i } });
 				}
 			} catch (error) {
+				const err = error as Error & { statusCode?: number; body?: unknown };
+				let message = err.message || 'Unknown error';
+				if (err.body) {
+					try {
+						const bodyStr = typeof err.body === 'string' ? err.body : JSON.stringify(err.body);
+						message = `${message} | Response: ${bodyStr}`;
+					} catch {
+						// body not serializable, use message only
+					}
+				}
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
+					returnData.push({ json: { error: message }, pairedItem: { item: i } });
 				} else {
-					throw new NodeOperationError(this.getNode(), error as Error, { itemIndex: i });
+					throw new NodeOperationError(this.getNode(), message, { itemIndex: i });
 				}
 			}
 		}
