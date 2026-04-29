@@ -99,6 +99,7 @@ export class Taboola implements INodeType {
 				noDataExpression: true,
 				displayOptions: { show: { resource: ['report'] } },
 				options: [
+					{ name: 'Campaign History', value: 'campaignHistory', description: 'Get campaign history/audit log report', action: 'Get campaign history report' },
 					{ name: 'Campaign Summary', value: 'campaignSummary', description: 'Get campaign summary report', action: 'Get campaign summary report' },
 					{ name: 'Top Campaign Content', value: 'topCampaignContent', description: 'Get top campaign content report', action: 'Get top campaign content report' },
 				],
@@ -477,62 +478,69 @@ export class Taboola implements INodeType {
 				},
 			},
 			{
-				displayName: 'Title',
-				name: 'itemTitle',
-				type: 'string',
-				default: '',
-				description: 'The title/headline for the item',
+				displayName: 'Additional Fields',
+				name: 'itemAdditionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				default: {},
 				displayOptions: {
 					show: { resource: ['campaignItem'], operation: ['create'] },
 				},
-			},
-			{
-				displayName: 'Thumbnail URL',
-				name: 'thumbnailUrl',
-				type: 'string',
-				default: '',
-				description: 'URL of the thumbnail image',
-				displayOptions: {
-					show: { resource: ['campaignItem'], operation: ['create'] },
-				},
-			},
-			{
-				displayName: 'Description',
-				name: 'itemDescription',
-				type: 'string',
-				default: '',
-				description: 'Description text for the campaign item',
-				displayOptions: {
-					show: { resource: ['campaignItem'], operation: ['create'] },
-				},
-			},
-			{
-				displayName: 'CTA (Call to Action)',
-				name: 'itemCta',
-				type: 'options',
 				options: [
-					{ name: 'Click Here', value: 'CLICK_HERE' },
-					{ name: 'Download', value: 'DOWNLOAD' },
-					{ name: 'Get Offer', value: 'GET_OFFER' },
-					{ name: 'Get Quote', value: 'GET_QUOTE' },
-					{ name: 'Install Now', value: 'INSTALL_NOW' },
-					{ name: 'Learn More', value: 'LEARN_MORE' },
-					{ name: 'None', value: 'NONE' },
-					{ name: 'Play Now', value: 'PLAY_NOW' },
-					{ name: 'Read More', value: 'READ_MORE' },
-					{ name: 'Search Now', value: 'SEARCH_NOW' },
-					{ name: 'Shop Now', value: 'SHOP_NOW' },
-					{ name: 'Sign Up', value: 'SIGN_UP' },
-					{ name: 'Try Now', value: 'TRY_NOW' },
+					{
+						displayName: 'Creative Crop (JSON)',
+						name: 'creative_crop',
+						type: 'json',
+						default: '',
+						description: 'Provide different images for specific aspect ratios. JSON with crop_data array containing ratio and image entries.',
+					},
+					{
+						displayName: 'CTA (Call to Action)',
+						name: 'cta',
+						type: 'options',
+						options: [
+							{ name: 'Click Here', value: 'CLICK_HERE' },
+							{ name: 'Download', value: 'DOWNLOAD' },
+							{ name: 'Get Offer', value: 'GET_OFFER' },
+							{ name: 'Get Quote', value: 'GET_QUOTE' },
+							{ name: 'Install Now', value: 'INSTALL_NOW' },
+							{ name: 'Learn More', value: 'LEARN_MORE' },
+							{ name: 'None', value: 'NONE' },
+							{ name: 'Play Now', value: 'PLAY_NOW' },
+							{ name: 'Read More', value: 'READ_MORE' },
+							{ name: 'Search Now', value: 'SEARCH_NOW' },
+							{ name: 'Shop Now', value: 'SHOP_NOW' },
+							{ name: 'Sign Up', value: 'SIGN_UP' },
+							{ name: 'Try Now', value: 'TRY_NOW' },
+						],
+						default: 'NONE',
+						description: 'The call-to-action button for the item',
+					},
+					{
+						displayName: 'Description',
+						name: 'description',
+						type: 'string',
+						default: '',
+						description: 'Description text for the campaign item',
+					},
+					{
+						displayName: 'Thumbnail URL',
+						name: 'thumbnail_url',
+						type: 'string',
+						default: '',
+						description: 'URL of the thumbnail image',
+					},
+					{
+						displayName: 'Title',
+						name: 'title',
+						type: 'string',
+						default: '',
+						description: 'The title/headline for the item',
+					},
 				],
-				default: 'NONE',
-				description: 'The call-to-action button for the item',
-				displayOptions: {
-					show: { resource: ['campaignItem'], operation: ['create'] },
-				},
 			},
 			{
-				displayName: 'Item Update Fields',
+				displayName: 'Update Fields',
 				name: 'itemUpdateFields',
 				type: 'collection',
 				placeholder: 'Add Field',
@@ -547,6 +555,13 @@ export class Taboola implements INodeType {
 						type: 'boolean',
 						default: true,
 						description: 'Whether the item is active',
+					},
+					{
+						displayName: 'Creative Crop (JSON)',
+						name: 'creative_crop',
+						type: 'json',
+						default: '',
+						description: 'Provide different images for specific aspect ratios. JSON with crop_data array containing ratio and image entries.',
 					},
 					{
 						displayName: 'CTA (Call to Action)',
@@ -607,14 +622,57 @@ export class Taboola implements INodeType {
 				name: 'dimension',
 				type: 'options',
 				options: [
+					{ name: 'Browser Breakdown', value: 'browser_breakdown' },
+					{ name: 'By Hour of Day', value: 'by_hour_of_day' },
+					{ name: 'Campaign Breakdown', value: 'campaign_breakdown' },
+					{ name: 'Campaign Day Breakdown', value: 'campaign_day_breakdown' },
+					{ name: 'Campaign Hour Breakdown', value: 'campaign_hour_breakdown' },
+					{ name: 'Campaign Site Day Breakdown', value: 'campaign_site_day_breakdown' },
+					{ name: 'Content Provider Breakdown', value: 'content_provider_breakdown' },
+					{ name: 'Content Provider Country Breakdown', value: 'content_provider_country_breakdown' },
+					{ name: 'Contextual Breakdown', value: 'contextual_breakdown' },
+					{ name: 'Country Breakdown', value: 'country_breakdown' },
 					{ name: 'Day', value: 'day' },
+					{ name: 'DMA Breakdown', value: 'dma_breakdown' },
 					{ name: 'Month', value: 'month' },
+					{ name: 'OS Family Breakdown', value: 'os_family_breakdown' },
+					{ name: 'OS Version Breakdown', value: 'os_version_breakdown' },
+					{ name: 'Platform Breakdown', value: 'platform_breakdown' },
+					{ name: 'Region Breakdown', value: 'region_breakdown' },
+					{ name: 'Site Breakdown', value: 'site_breakdown' },
+					{ name: 'User Segment Breakdown', value: 'user_segment_breakdown' },
 					{ name: 'Week', value: 'week' },
 				],
 				default: 'day',
-				description: 'The time dimension for the report',
+				description: 'The dimension for the report',
 				displayOptions: {
-					show: { resource: ['report'] },
+					show: { resource: ['report'], operation: ['campaignSummary'] },
+				},
+			},
+			{
+				displayName: 'Dimension',
+				name: 'historyDimension',
+				type: 'options',
+				options: [
+					{ name: 'By Account', value: 'by_account' },
+					{ name: 'By Campaign', value: 'by_campaign' },
+					{ name: 'By Day Count', value: 'by_day_count' },
+				],
+				default: 'by_campaign',
+				description: 'The dimension for the campaign history report',
+				displayOptions: {
+					show: { resource: ['report'], operation: ['campaignHistory'] },
+				},
+			},
+			{
+				displayName: 'Campaign ID',
+				name: 'historyCampaignId',
+				type: 'string',
+				default: '',
+				required: true,
+				description: 'Campaign ID to filter by (required for by_campaign dimension)',
+				displayOptions: {
+					show: { resource: ['report'], operation: ['campaignHistory'], historyDimension: ['by_campaign'] },
 				},
 			},
 			{
@@ -640,14 +698,129 @@ export class Taboola implements INodeType {
 				},
 			},
 			{
-				displayName: 'Campaign ID (Optional)',
-				name: 'reportCampaignId',
-				type: 'string',
-				default: '',
-				description: 'Filter report by a specific campaign ID',
+				displayName: 'Content Filters',
+				name: 'contentFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
 				displayOptions: {
-					show: { resource: ['report'] },
+					show: { resource: ['report'], operation: ['topCampaignContent'] },
 				},
+				options: [
+					{
+						displayName: 'Campaign ID',
+						name: 'campaign',
+						type: 'string',
+						default: '',
+						description: 'Filter by a specific campaign ID',
+					},
+				],
+			},
+			{
+				displayName: 'Summary Filters',
+				name: 'summaryFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
+				displayOptions: {
+					show: { resource: ['report'], operation: ['campaignSummary'] },
+				},
+				options: [
+					{
+						displayName: 'Campaign ID',
+						name: 'campaign',
+						type: 'string',
+						default: '',
+						description: 'Filter by a specific campaign ID',
+					},
+					{
+						displayName: 'Country',
+						name: 'country',
+						type: 'string',
+						default: '',
+						description: '2-letter country code as defined by ISO-3166',
+					},
+					{
+						displayName: 'Partner Name',
+						name: 'partner_name',
+						type: 'string',
+						default: '',
+						description: 'The data partner (case-sensitive)',
+					},
+					{
+						displayName: 'Platform',
+						name: 'platform',
+						type: 'options',
+						options: [
+							{ name: 'Desktop', value: 'DESK' },
+							{ name: 'Smartphone', value: 'PHON' },
+							{ name: 'Tablet', value: 'TBLT' },
+						],
+						default: 'DESK',
+						description: 'Filter by platform type',
+					},
+					{
+						displayName: 'Site',
+						name: 'site',
+						type: 'string',
+						default: '',
+						description: 'Filter by site name (human-readable site name)',
+					},
+				],
+			},
+			{
+				displayName: 'History Filters',
+				name: 'historyFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
+				displayOptions: {
+					show: { resource: ['report'], operation: ['campaignHistory'] },
+				},
+				options: [
+					{
+						displayName: 'Activity Code',
+						name: 'activity_code',
+						type: 'string',
+						default: '',
+						description: 'Filter by activity code',
+					},
+					{
+						displayName: 'Campaign Group ID',
+						name: 'campaigns_group_id',
+						type: 'string',
+						default: '',
+						description: 'Campaign group ID. Use -1 for all.',
+					},
+					{
+						displayName: 'Page',
+						name: 'page',
+						type: 'number',
+						default: 0,
+						description: 'Page number for pagination',
+					},
+					{
+						displayName: 'Page Size',
+						name: 'page_size',
+						type: 'number',
+						default: 100,
+						description: 'Records per page',
+					},
+					{
+						displayName: 'Performer',
+						name: 'performer',
+						type: 'string',
+						default: '',
+						description: 'Filter by performer (partial match, case-insensitive)',
+					},
+					{
+						displayName: 'Sort',
+						name: 'sort',
+						type: 'string',
+						default: '',
+						description: 'Sort column and direction',
+					},
+				],
 			},
 		],
 	};
@@ -819,14 +992,17 @@ export class Taboola implements INodeType {
 						const itemData: Record<string, unknown> = {
 							url: this.getNodeParameter('itemUrl', i) as string,
 						};
-						const title = this.getNodeParameter('itemTitle', i, '') as string;
-						const thumbnailUrl = this.getNodeParameter('thumbnailUrl', i, '') as string;
-						const description = this.getNodeParameter('itemDescription', i, '') as string;
-						const itemCta = this.getNodeParameter('itemCta', i, 'NONE') as string;
-						if (title) itemData.title = title;
-						if (thumbnailUrl) itemData.thumbnail_url = thumbnailUrl;
-						if (description) itemData.description = description;
-						if (itemCta && itemCta !== 'NONE') itemData.cta = { cta_type: itemCta };
+						const additionalItemFields = this.getNodeParameter('itemAdditionalFields', i, {}) as Record<string, unknown>;
+						if (additionalItemFields.title) itemData.title = additionalItemFields.title;
+						if (additionalItemFields.thumbnail_url) itemData.thumbnail_url = additionalItemFields.thumbnail_url;
+						if (additionalItemFields.description) itemData.description = additionalItemFields.description;
+						if (additionalItemFields.cta && additionalItemFields.cta !== 'NONE') {
+							itemData.cta = { cta_type: additionalItemFields.cta };
+						}
+						if (additionalItemFields.creative_crop) {
+							const cc = additionalItemFields.creative_crop;
+							itemData.creative_crop = typeof cc === 'string' ? JSON.parse(cc as string) : cc;
+						}
 						body = { collection: [itemData] };
 					}
 
@@ -838,6 +1014,11 @@ export class Taboola implements INodeType {
 						// Convert cta to nested object
 						if ((body as Record<string, unknown>).cta) {
 							(body as Record<string, unknown>).cta = { cta_type: (body as Record<string, unknown>).cta };
+						}
+						// Parse creative_crop JSON if provided as string
+						if ((body as Record<string, unknown>).creative_crop) {
+							const cc = (body as Record<string, unknown>).creative_crop;
+							(body as Record<string, unknown>).creative_crop = typeof cc === 'string' ? JSON.parse(cc) : cc;
 						}
 					}
 
@@ -851,21 +1032,41 @@ export class Taboola implements INodeType {
 				// ── Report ──
 				if (resource === 'report') {
 					const accountId = this.getNodeParameter('accountId', i) as string;
-					const dimension = this.getNodeParameter('dimension', i) as string;
 					const startDate = this.getNodeParameter('reportStartDate', i) as string;
 					const endDate = this.getNodeParameter('reportEndDate', i) as string;
-					const campaignId = this.getNodeParameter('reportCampaignId', i, '') as string;
 
 					if (operation === 'campaignSummary') {
+						const dimension = this.getNodeParameter('dimension', i) as string;
 						url = `${baseUrl}/${accountId}/reports/campaign-summary/dimensions/${dimension}`;
+						url += `?start_date=${startDate}&end_date=${endDate}`;
+						const summaryFilters = this.getNodeParameter('summaryFilters', i, {}) as Record<string, unknown>;
+						if (summaryFilters.campaign) url += `&campaign=${summaryFilters.campaign}`;
+						if (summaryFilters.platform) url += `&platform=${summaryFilters.platform}`;
+						if (summaryFilters.country) url += `&country=${summaryFilters.country}`;
+						if (summaryFilters.site) url += `&site=${encodeURIComponent(summaryFilters.site as string)}`;
+						if (summaryFilters.partner_name) url += `&partner_name=${encodeURIComponent(summaryFilters.partner_name as string)}`;
 					}
 					if (operation === 'topCampaignContent') {
-						url = `${baseUrl}/${accountId}/reports/top-campaign-content/dimensions/${dimension}`;
+						url = `${baseUrl}/${accountId}/reports/top-campaign-content/dimensions/item_breakdown`;
+						url += `?start_date=${startDate}&end_date=${endDate}`;
+						const contentFilters = this.getNodeParameter('contentFilters', i, {}) as Record<string, unknown>;
+						if (contentFilters.campaign) url += `&campaign=${contentFilters.campaign}`;
 					}
-
-					url += `?start_date=${startDate}&end_date=${endDate}`;
-					if (campaignId) {
-						url += `&campaign=${campaignId}`;
+					if (operation === 'campaignHistory') {
+						const dimension = this.getNodeParameter('historyDimension', i) as string;
+						url = `${baseUrl}/${accountId}/reports/campaign-history/dimensions/${dimension}`;
+						url += `?start_date=${startDate}&end_date=${endDate}`;
+						if (dimension === 'by_campaign') {
+							const campaignId = this.getNodeParameter('historyCampaignId', i) as string;
+							url += `&campaign_param=${campaignId}`;
+						}
+						const filters = this.getNodeParameter('historyFilters', i, {}) as Record<string, unknown>;
+						if (filters.activity_code) url += `&activity_code=${filters.activity_code}`;
+						if (filters.performer) url += `&performer=${encodeURIComponent(filters.performer as string)}`;
+						if (filters.campaigns_group_id) url += `&campaigns_group_id=${filters.campaigns_group_id}`;
+						if (filters.page !== undefined) url += `&page=${filters.page}`;
+						if (filters.page_size !== undefined) url += `&page_size=${filters.page_size}`;
+						if (filters.sort) url += `&sort=${encodeURIComponent(filters.sort as string)}`;
 					}
 				}
 
@@ -902,15 +1103,14 @@ export class Taboola implements INodeType {
 					returnData.push({ json: response, pairedItem: { item: i } });
 				}
 			} catch (error) {
-				const err = error as Error & { statusCode?: number; body?: unknown };
+				const err = error as Error & {
+					response?: { status?: number; data?: { message?: string } };
+				};
 				let message = err.message || 'Unknown error';
-				if (err.body) {
-					try {
-						const bodyStr = typeof err.body === 'string' ? err.body : JSON.stringify(err.body);
-						message = `${message} | Response: ${bodyStr}`;
-					} catch {
-						// body not serializable, use message only
-					}
+				// Extract Taboola API error message and HTTP status from Axios response
+				if (err.response?.data?.message) {
+					const status = err.response.status ? `HTTP ${err.response.status}: ` : '';
+					message = `${status}${err.response.data.message}`;
 				}
 				if (this.continueOnFail()) {
 					returnData.push({ json: { error: message }, pairedItem: { item: i } });
