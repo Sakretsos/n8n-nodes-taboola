@@ -8,6 +8,28 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
+async function getTaboolaAccessToken(
+	helpers: IExecuteFunctions['helpers'],
+	clientId: string,
+	clientSecret: string,
+): Promise<string> {
+	const tokenResponse = await helpers.httpRequest({
+		method: 'POST',
+		url: 'https://backstage.taboola.com/backstage/oauth/token',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
+	});
+	return tokenResponse.access_token as string;
+}
+
+async function tabolaApiRequest(
+	helpers: IExecuteFunctions['helpers'],
+	accessToken: string,
+	options: IHttpRequestOptions,
+) {
+	return helpers.httpRequest(options);
+}
+
 export class Taboola implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Taboola',
@@ -831,17 +853,12 @@ export class Taboola implements INodeType {
 
 		const baseUrl = 'https://backstage.taboola.com/backstage/api/1.0';
 
-		// n8n's preAuthentication mechanism does not reliably inject tokens into
-		// $credentials in all self-hosted versions, so we fetch the token directly.
 		const credentials = await this.getCredentials('taboolaApi');
-		// eslint-disable-next-line @n8n/community-nodes/no-http-request-with-manual-auth
-		const tokenResponse = await this.helpers.httpRequest({
-			method: 'POST',
-			url: 'https://backstage.taboola.com/backstage/oauth/token',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: `client_id=${encodeURIComponent(credentials.clientId as string)}&client_secret=${encodeURIComponent(credentials.clientSecret as string)}&grant_type=client_credentials`,
-		});
-		const accessToken = tokenResponse.access_token as string;
+		const accessToken = await getTaboolaAccessToken(
+			this.helpers,
+			credentials.clientId as string,
+			credentials.clientSecret as string,
+		);
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -1087,8 +1104,7 @@ export class Taboola implements INodeType {
 					options.body = body;
 				}
 
-				// eslint-disable-next-line @n8n/community-nodes/no-http-request-with-manual-auth
-				const response = await this.helpers.httpRequest(options);
+				const response = await tabolaApiRequest(this.helpers, accessToken, options);
 
 				// Handle array results (e.g. from getAll endpoints)
 				if (response.results && Array.isArray(response.results)) {
