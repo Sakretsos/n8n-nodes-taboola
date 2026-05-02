@@ -1,34 +1,17 @@
-import type {
-	IExecuteFunctions,
-	IHttpRequestMethods,
-	IHttpRequestOptions,
-	INodeExecutionData,
-	INodeType,
-	INodeTypeDescription,
+import {
+	type IAllExecuteFunctions,
+	type IExecuteFunctions,
+	type IHttpRequestMethods,
+	type IHttpRequestOptions,
+	type INodeExecutionData,
+	type INodeType,
+	type INodeTypeDescription,
+	type JsonObject,
+	NodeApiError,
+	NodeConnectionTypes,
+	NodeOperationError,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
-async function getTaboolaAccessToken(
-	helpers: IExecuteFunctions['helpers'],
-	clientId: string,
-	clientSecret: string,
-): Promise<string> {
-	const tokenResponse = await helpers.httpRequest({
-		method: 'POST',
-		url: 'https://backstage.taboola.com/backstage/oauth/token',
-		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-		body: `client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}&grant_type=client_credentials`,
-	});
-	return tokenResponse.access_token as string;
-}
-
-async function tabolaApiRequest(
-	helpers: IExecuteFunctions['helpers'],
-	accessToken: string,
-	options: IHttpRequestOptions,
-) {
-	return helpers.httpRequest(options);
-}
 
 export class Taboola implements INodeType {
 	description: INodeTypeDescription = {
@@ -47,7 +30,7 @@ export class Taboola implements INodeType {
 		usableAsTool: true,
 		credentials: [
 			{
-				name: 'taboolaApi',
+				name: 'taboolaOAuth2Api',
 				required: true,
 			},
 		],
@@ -853,13 +836,6 @@ export class Taboola implements INodeType {
 
 		const baseUrl = 'https://backstage.taboola.com/backstage/api/1.0';
 
-		const credentials = await this.getCredentials('taboolaApi');
-		const accessToken = await getTaboolaAccessToken(
-			this.helpers,
-			credentials.clientId as string,
-			credentials.clientSecret as string,
-		);
-
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const resource = this.getNodeParameter('resource', i) as string;
@@ -1096,7 +1072,6 @@ export class Taboola implements INodeType {
 					url,
 					headers: {
 						'Content-Type': 'application/json',
-						Authorization: `Bearer ${accessToken}`,
 					},
 				};
 
@@ -1104,7 +1079,7 @@ export class Taboola implements INodeType {
 					options.body = body;
 				}
 
-				const response = await tabolaApiRequest(this.helpers, accessToken, options);
+				const response = await this.helpers.httpRequestWithAuthentication.call(this as unknown as IAllExecuteFunctions, 'taboolaOAuth2Api', options);
 
 				// Handle array results (e.g. from getAll endpoints)
 				if (response.results && Array.isArray(response.results)) {
@@ -1119,19 +1094,18 @@ export class Taboola implements INodeType {
 					returnData.push({ json: response, pairedItem: { item: i } });
 				}
 			} catch (error) {
-				const err = error as Error & {
-					response?: { status?: number; data?: { message?: string } };
-				};
-				let message = err.message || 'Unknown error';
-				// Extract Taboola API error message and HTTP status from Axios response
-				if (err.response?.data?.message) {
-					const status = err.response.status ? `HTTP ${err.response.status}: ` : '';
-					message = `${status}${err.response.data.message}`;
-				}
 				if (this.continueOnFail()) {
+					const err = error as Error & {
+						response?: { status?: number; data?: { message?: string } };
+					};
+					let message = err.message || 'Unknown error';
+					if (err.response?.data?.message) {
+						const status = err.response.status ? `HTTP ${err.response.status}: ` : '';
+						message = `${status}${err.response.data.message}`;
+					}
 					returnData.push({ json: { error: message }, pairedItem: { item: i } });
 				} else {
-					throw new NodeOperationError(this.getNode(), message, { itemIndex: i });
+					throw new NodeApiError(this.getNode(), error as JsonObject, { itemIndex: i });
 				}
 			}
 		}
