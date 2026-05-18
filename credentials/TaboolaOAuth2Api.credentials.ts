@@ -11,7 +11,7 @@ export class TaboolaOAuth2Api implements ICredentialType {
 
 	displayName = 'Taboola OAuth2 API';
 
-	icon: Icon = 'file:../nodes/Taboola/taboola.svg';
+	icon: Icon = { light: 'file:../nodes/Taboola/taboola-light.svg', dark: 'file:../nodes/Taboola/taboola-dark.svg' };
 
 	documentationUrl = 'https://developers.taboola.com/backstage-api/reference/welcome';
 

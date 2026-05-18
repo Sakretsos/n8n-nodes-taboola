@@ -17,7 +17,7 @@ export class Taboola implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Taboola',
 		name: 'taboola',
-		icon: 'file:taboola.svg',
+		icon: { light: 'file:taboola-light.svg', dark: 'file:taboola-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
