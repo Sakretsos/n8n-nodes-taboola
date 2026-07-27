@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-taboola",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"description": "n8n community node for the Taboola Backstage API",
 	"license": "MIT",
 	"homepage": "https://github.com/Sakretsos/n8n-nodes-taboola",

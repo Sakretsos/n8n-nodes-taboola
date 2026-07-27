@@ -28,9 +28,6 @@ export class Taboola implements INodeType {
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		usableAsTool: true,
-		requestDefaults: {
-			baseURL: 'https://backstage.taboola.com/backstage/api/1.0',
-		},
 		credentials: [
 			{
 				name: 'taboolaOAuth2Api',
