@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-taboola",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"description": "n8n community node for the Taboola Backstage API",
 	"license": "MIT",
 	"homepage": "https://github.com/Sakretsos/n8n-nodes-taboola",
@@ -41,7 +41,7 @@
 		]
 	},
 	"devDependencies": {
-		"@n8n/node-cli": "^0.31.0",
+		"@n8n/node-cli": "^0.40.3",
 		"eslint": "9.39.4",
 		"prettier": "3.8.3",
 		"release-it": "20.0.0",

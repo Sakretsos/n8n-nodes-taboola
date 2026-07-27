@@ -28,6 +28,9 @@ export class Taboola implements INodeType {
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		usableAsTool: true,
+		requestDefaults: {
+			baseURL: 'https://backstage.taboola.com/backstage/api/1.0',
+		},
 		credentials: [
 			{
 				name: 'taboolaOAuth2Api',
@@ -43,6 +46,7 @@ export class Taboola implements INodeType {
 				noDataExpression: true,
 				options: [
 					{ name: 'Account', value: 'account' },
+					{ name: 'Audience Targeting', value: 'audienceTargeting' },
 					{ name: 'Campaign', value: 'campaign' },
 					{ name: 'Campaign Item', value: 'campaignItem' },
 					{ name: 'Report', value: 'report' },
@@ -61,6 +65,37 @@ export class Taboola implements INodeType {
 					{ name: 'Get Many', value: 'getAll', description: 'Get many allowed accounts', action: 'Get many accounts' },
 				],
 				default: 'getAll',
+			},
+
+			// ── Audience Targeting Operations ──
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: { show: { resource: ['audienceTargeting'] } },
+				options: [
+					{ name: 'Get', value: 'get', description: 'Get audience targeting for a campaign', action: 'Get audience targeting' },
+					{ name: 'Update', value: 'update', description: 'Update audience targeting for a campaign', action: 'Update audience targeting' },
+				],
+				default: 'get',
+			},
+			{
+				displayName: 'Targeting Type',
+				name: 'targetingType',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{ name: 'Contextual', value: 'contextual_segments' },
+					{ name: 'Custom Audience', value: 'custom_audience' },
+					{ name: 'Lookalike Audience', value: 'lookalike_audience' },
+					{ name: 'Marketplace Audience', value: 'audience_segments' },
+				],
+				default: 'audience_segments',
+				description: 'The type of audience targeting to manage',
+				displayOptions: {
+					show: { resource: ['audienceTargeting'] },
+				},
 			},
 
 			// ── Campaign Operations ──
@@ -443,6 +478,61 @@ export class Taboola implements INodeType {
 						description: 'URL parameters appended to campaign item URLs for tracking (e.g. utm_source=taboola&utm_medium=referral). Do not add a leading ? or &.',
 					},
 				],
+			},
+
+			// ── Audience Targeting Fields ──
+			{
+				displayName: 'Campaign ID',
+				name: 'campaignId',
+				type: 'string',
+				default: '',
+				required: true,
+				description: 'The numeric campaign ID',
+				displayOptions: {
+					show: { resource: ['audienceTargeting'] },
+				},
+			},
+			{
+				displayName: 'Include Segment IDs',
+				name: 'segmentIds',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated segment IDs to include (e.g. 158354,84965,15495). Leave empty to target all.',
+				displayOptions: {
+					show: {
+						resource: ['audienceTargeting'],
+						operation: ['update'],
+						targetingType: ['audience_segments', 'custom_audience', 'contextual_segments'],
+					},
+				},
+			},
+			{
+				displayName: 'Exclude Segment IDs',
+				name: 'excludeSegmentIds',
+				type: 'string',
+				default: '',
+				description: 'Comma-separated segment IDs to exclude (e.g. 19884,29870). Only supported for Custom Audience and Contextual targeting.',
+				displayOptions: {
+					show: {
+						resource: ['audienceTargeting'],
+						operation: ['update'],
+						targetingType: ['custom_audience', 'contextual_segments'],
+					},
+				},
+			},
+			{
+				displayName: 'Lookalike Audiences (JSON)',
+				name: 'lookalikeAudiences',
+				type: 'json',
+				default: '[]',
+				description: 'JSON array of lookalike audience objects, each with rule_id and similarity_level (e.g. [{"rule_id": 5253453, "similarity_level": 15}]). Pixel audiences support level 5 only. Leave as empty array [] to target all.',
+				displayOptions: {
+					show: {
+						resource: ['audienceTargeting'],
+						operation: ['update'],
+						targetingType: ['lookalike_audience'],
+					},
+				},
 			},
 
 			// ── Campaign Item Fields ──
@@ -1019,6 +1109,56 @@ export class Taboola implements INodeType {
 						method = 'DELETE';
 						const itemId = this.getNodeParameter('itemId', i) as string;
 						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/items/${itemId}/`;
+					}
+				}
+
+				// ── Audience Targeting ──
+				if (resource === 'audienceTargeting') {
+					const accountId = this.getNodeParameter('accountId', i) as string;
+					const campaignId = this.getNodeParameter('campaignId', i) as string;
+					const targetingType = this.getNodeParameter('targetingType', i) as string;
+
+					if (operation === 'get') {
+						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/targeting/${targetingType}`;
+					}
+
+					if (operation === 'update') {
+						method = 'POST';
+						url = `${baseUrl}/${accountId}/campaigns/${campaignId}/targeting/${targetingType}`;
+
+						if (targetingType === 'lookalike_audience') {
+							const lookalikeRaw = this.getNodeParameter('lookalikeAudiences', i, '[]') as string | object;
+							const lookalikeArr = typeof lookalikeRaw === 'string' ? JSON.parse(lookalikeRaw) : lookalikeRaw;
+							if (Array.isArray(lookalikeArr) && lookalikeArr.length > 0) {
+								body = {
+									collection: [{ collection: lookalikeArr, type: 'INCLUDE' }],
+								};
+							} else {
+								body = { collection: [] };
+							}
+						} else {
+							const segmentIds = (this.getNodeParameter('segmentIds', i, '') as string).trim();
+							const collection: { collection: number[]; type: string }[] = [];
+
+							if (segmentIds) {
+								collection.push({
+									collection: segmentIds.split(',').map((id: string) => Number(id.trim())),
+									type: 'INCLUDE',
+								});
+							}
+
+							if (targetingType === 'custom_audience' || targetingType === 'contextual_segments') {
+								const excludeIds = (this.getNodeParameter('excludeSegmentIds', i, '') as string).trim();
+								if (excludeIds) {
+									collection.push({
+										collection: excludeIds.split(',').map((id: string) => Number(id.trim())),
+										type: 'EXCLUDE',
+									});
+								}
+							}
+
+							body = { collection };
+						}
 					}
 				}
 
